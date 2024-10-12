@@ -1,0 +1,23 @@
+#//密钥可前往官网控制台https://console.cloud.tencent.com/cam/capi进行获取
+#TencentId  string `yaml:"TencentId"`
+#TencentKey string `yaml:"TencentKey"`
+#//密钥可前往官网控制台https://ram.console.aliyun.com/manage/ak进行获取
+#AlibabaId  string `yaml:"AlibabaId"`
+#AlibabaKey string `yaml:"AlibabaKey"`
+#//密钥可前往官网控制台https://console.bce.baidu.com/iam/#/iam/accesslist进行获取
+#BaiduId  string `yaml:"BaiduId"`
+#BaiduKey string `yaml:"BaiduKey"`
+#//秘钥前往控制台https://support.huaweicloud.com/devg-apisign/api-sign-provide-aksk.html#:~:text=%E6%93%8D%E4%BD%9C%E6%AD%A5%E9%AA%A4.%20%E6%9B%B4%E6%96%B0%E6%97%B6%E9%97%B4 获取
+#HuaweiID  string `yaml:"HuaweiID"`
+#HuaweiKey string `yaml:"HuaweiKey"`
+#TencentId: ""
+TencentId: ""
+TencentKey: ""
+AlibabaId: ""
+AlibabaKey: ""
+BaiduId: ""
+BaiduKey: ""
+VolcengineId: ""
+VolcengineKey: ""
+HuaweiID: ""
+HuaweiKey: ""
