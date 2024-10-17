@@ -92,7 +92,7 @@ func (c *Client) GetCityByIp(input net.IP) string {
 
 // 调用火山云接口，判断IP是否归属火山云
 func (c *Client) Checkvolcengine(input net.IP) (cdn string, isp string) {
-	if c.config.TencentId == "" {
+	if c.config.VolcengineKey == "" {
 		return "", ""
 	}
 	ip := input.String()
