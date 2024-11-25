@@ -62,7 +62,8 @@ VolcengineKey: ""
 HuaweiID: ""
 HuaweiKey: ""
 		`)
-		err = os.WriteFile("config.yaml", configContent, 0644)
+		// 支持通过命令行指定配置文件路径，而不是固定当前目录
+		err = os.WriteFile(filePath, configContent, 0644)
 		if err != nil {
 			log.Fatal("创建配置文件失败", err)
 		}
