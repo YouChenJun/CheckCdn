@@ -1,10 +1,10 @@
 package client
 
 import (
-	"CheckCdn/client/ipdb"
-	"CheckCdn/config"
 	"context"
 	"fmt"
+	"github.com/YouChenJun/CheckCdn/client/ipdb"
+	"github.com/YouChenJun/CheckCdn/config"
 	ali_cdn20180510 "github.com/alibabacloud-go/cdn-20180510/v3/client"
 	ali_openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
 	ali_util "github.com/alibabacloud-go/tea-utils/v2/service"
@@ -27,6 +27,7 @@ import (
 	"github.com/volcengine/volcengine-go-sdk/volcengine/credentials"
 	"github.com/volcengine/volcengine-go-sdk/volcengine/session"
 	"io/ioutil"
+	"log/slog"
 	"net"
 	"sync"
 )
@@ -82,6 +83,7 @@ func (c *Client) GetCityByIp(input net.IP) string {
 	tmp, _ := gcharset.ToUTF8(srcCharset, src)
 	json, err := gjson.DecodeToJson(tmp)
 	if err != nil {
+		slog.Error("查询所属地址异常:", err)
 		return ""
 	}
 	if json.Get("addr").String() != "" {
@@ -112,8 +114,7 @@ func (c *Client) Checkvolcengine(input net.IP) (cdn string, isp string) {
 	// 复制代码运行示例，请自行打印API返回值。
 	response, err := svc.DescribeCdnIP(describeCdnIPInput)
 	if err != nil {
-		// 复制代码运行示例，请自行打印API错误信息。
-		fmt.Println("火山接口调用出错！", err)
+		slog.Error("火山云接口查询异常:", err)
 		return "", ""
 	}
 	patternStr := `CdnIp: (.*?),`
@@ -154,7 +155,7 @@ func (c *Client) CheckTencent(input net.IP) (cdn string, isp string) {
 	response, err := client.DescribeCdnIp(request)
 	//fmt.Print(response.ToJsonString())
 	if err != nil {
-		fmt.Println("腾讯接口调用出错！", err)
+		slog.Error("腾讯接口查询异常:", err)
 		return "", ""
 	}
 	patternStr := `"Platform":"(.*?)"`
@@ -189,7 +190,7 @@ func (c *Client) CheckAliyun(input net.IP) (cdn string, isp string) {
 	client := &ali_cdn20180510.Client{}
 	client, err := ali_cdn20180510.NewClient(config)
 	if err != nil {
-		fmt.Println("阿里接口调用出错！", err)
+		slog.Error("阿里云接口查询异常:", err)
 		return "", ""
 	}
 	describeIpInfoRequest := &ali_cdn20180510.DescribeIpInfoRequest{IP: ali_tea.String(ip)}
@@ -225,7 +226,7 @@ func (c *Client) CheckBaidu(input net.IP) (cdn string, isp string) {
 	req.SetBody(payload)
 	client, err := bd_bce.NewBceClientWithAkSk(c.config.BaiduId, c.config.BaiduKey, "https://cdn.baidubce.com")
 	if err != nil {
-		fmt.Println("百度接口调用出错！", err)
+		slog.Error("百度云接口查询异常:", err)
 		return "", ""
 	}
 	resp := &bd_bce.BceResponse{}
@@ -272,6 +273,7 @@ func (c *Client) CheckHuawei(input net.IP) (cdn string, isp string) {
 	request.Ips = ip
 	response, err := client.ShowIpInfo(request)
 	if err != nil {
+		slog.Error("华为云接口查询异常:", err)
 		return "", ""
 	}
 	json, err := gjson.DecodeToJson(response)
@@ -293,7 +295,20 @@ func (c *Client) Check(inputIp string) (result config.Result) {
 		result.IsMatch = false
 		return
 	}
-	location := c.GetCityByIp(ip)
+	//检查ip是否在缓存中
+	cached, location, source, err := CheckIPInCache(inputIp)
+	if err != nil {
+		slog.Error("查询缓存异常:", err)
+	}
+	if cached {
+		result.Location = location
+		result.IsMatch = true
+		result.Type = "cdn-本地数据库缓存"
+		result.Value = source
+		return
+	}
+	// 如果不在缓存中，继续进行API检查
+	location = c.GetCityByIp(ip)
 	result.Location = location
 
 	//腾讯
@@ -302,6 +317,7 @@ func (c *Client) Check(inputIp string) (result config.Result) {
 		result.IsMatch = true
 		result.Type = "tencent cdn-官方接口查询"
 		result.Value = cdn
+		InsertIPToCache(inputIp, result.Location, cdn)
 		return
 	}
 	if cdn, isp := c.Checkvolcengine(ip); cdn != "" {
@@ -309,6 +325,7 @@ func (c *Client) Check(inputIp string) (result config.Result) {
 		result.IsMatch = true
 		result.Type = "火山云 cdn-官方接口查询"
 		result.Value = cdn
+		InsertIPToCache(inputIp, result.Location, cdn)
 		return
 	}
 	//阿里
@@ -317,6 +334,7 @@ func (c *Client) Check(inputIp string) (result config.Result) {
 		result.IsMatch = true
 		result.Type = "Aliyun cdn-官方接口查询"
 		result.Value = cdn
+		InsertIPToCache(inputIp, result.Location, cdn)
 		return
 	}
 	//百度
@@ -325,6 +343,7 @@ func (c *Client) Check(inputIp string) (result config.Result) {
 		result.IsMatch = true
 		result.Type = "Baidu cdn-官方接口查询"
 		result.Value = cdn
+		InsertIPToCache(inputIp, result.Location, cdn)
 		return
 	}
 	//华为
@@ -333,6 +352,7 @@ func (c *Client) Check(inputIp string) (result config.Result) {
 		result.IsMatch = true
 		result.Type = "华为云 cdn-官方接口查询"
 		result.Value = cdn
+		InsertIPToCache(inputIp, result.Location, cdn)
 		return
 	}
 

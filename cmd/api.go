@@ -4,8 +4,8 @@
 package cmd
 
 import (
-	"CheckCdn/client"
-	"CheckCdn/config"
+	"github.com/YouChenJun/CheckCdn/client"
+	"github.com/YouChenJun/CheckCdn/config"
 )
 
 /**

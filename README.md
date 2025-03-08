@@ -13,7 +13,8 @@
 >- [华为云](https://support.huaweicloud.com/api-cdn/ShowIpInfo.html)
 >
 >详细的说明见本文的`四、实现原理`
-
+    
+  工具现支持本地缓存，使用sqlite数据库存储查询过的非CDNip资产，在下次查询会优先从缓存内查询是否为30天内非CDNip信息，避免了重复调用接口的问题、
 # 二、工具使用
 
 ​	首次运行程序后会在该目录下创建`config.yaml`配置文件，请查看本文档的**四、实现原理**进行配置
@@ -21,6 +22,8 @@
 ```
   -config string
         配置文件夹路径 (default "config.yaml")
+  -db string
+        ipdb数据库路径,默认为当前目录下的cdn_cache.db
   -delayed float
         查询延迟时间,默认0s
   -input string
@@ -112,7 +115,6 @@
 # 五、TODO
 
 - 输出json格式
-- 优化并行逻辑
 - httpx等工具适配
 
 # 六、免责说明
